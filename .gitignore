@@ -1,2 +1,4 @@
 .env
 setup_env.py
+/Envs/
+/.env

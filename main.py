@@ -37,15 +37,15 @@ logging.basicConfig(
 )
 
 CHOOSING, CREATING_TEAM, ADDING_MEMBERS, LISTING_MEMBERS,  = range(4)
-reply_keyboard = [
-    ["Создать группу", "Кто в группе"],
-    ["Помощь"],
-]
-markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+# reply_keyboard = [
+#     ["Создать группу", "Кто в группе"],
+#     ["Помощь"],
+# ]
+# markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
 
 if __name__ == '__main__':
-    persistence = PicklePersistence(filepath="conversationbot")
-    application = ApplicationBuilder().token(os.environ.get("TOKEN")).persistence(persistence).build()
+    #persistence = PicklePersistence(filepath="conversationbot")
+    application = ApplicationBuilder().token(os.environ.get("TOKEN")).build()
 
 
     '''Handler Declarations'''
@@ -64,7 +64,7 @@ if __name__ == '__main__':
             ],
             CREATING_TEAM: [
                 MessageHandler(
-                    filters.TEXT & ~(filters.COMMAND | filters.Regex("^Вот!$")),
+                    filters.TEXT & ~(filters.COMMAND | filters.Regex("^Стоп!$")),
                     create_team
                 )
             ],
@@ -74,10 +74,16 @@ if __name__ == '__main__':
                     add_members,
                 )
             ],
+            LISTING_MEMBERS: [
+                MessageHandler(
+                    filters.TEXT & ~(filters.COMMAND | filters.Regex("^Done$")),
+                    list_members,
+                )
+            ],
         },
         fallbacks=[MessageHandler(filters.Regex("^Done$"), start)],
         name="my_conversation",
-        persistent=True,
+        persistent=False,
     )
     help_handler = MessageHandler(filters.COMMAND, help_command)
 
