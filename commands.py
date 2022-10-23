@@ -29,15 +29,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 async def create_team(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    team_members = update.message.parse_entities()
+    context.user_data['team_members'] = team_members
     reply_text = "Введи список тегов тех, кого хочешь добавить к группе, через запятую:"
     await update.message.reply_text(reply_text)
     # context.bot.send_message(
     #     text="Введи список тегов тех, кого хочешь добавить к группе, через запятую:",
     #     chat_id=
     # )
-    message = update.message
-    team_members = message.parse_entities()
-    context.user_data['team_members'] = team_members
+
     return LISTING_MEMBERS
 
 
