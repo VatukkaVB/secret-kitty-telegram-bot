@@ -15,11 +15,14 @@ from telegram.ext import (
 
 from commands import (
     start,
+    check_in,
     help_command,
     create_team,
     add_members,
+    # choose_show,
     list_members,
     shuffle_members,
+    finish,
     unknown
 )
 
@@ -43,12 +46,12 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-CREATING_TEAM, ADDING_MEMBERS, LISTING_MEMBERS, HELP, CHOOSING, SHUFFLING, CHOOSING_TO_DO, = range(7)
+CREATING_TEAM, ADDING_MEMBERS, LISTING_MEMBERS, WAITING, CHOOSING, SHUFFLING, CHOOSING_TO_DO, FINISHING, = range(8)
 
 
 def main() -> None:
 
-    persistence = PicklePersistence(filepath="botdata")
+    persistence = PicklePersistence(filepath="bot_data")
     application = ApplicationBuilder().token(os.environ.get("TOKEN")).persistence(persistence).build()
 
     '''Handler Declarations'''
@@ -61,18 +64,20 @@ def main() -> None:
                     filters.Regex("^Создать группу$"),
                     create_team
                 ),
+            ],
+            WAITING: [
                 MessageHandler(
-                    filters.Regex("^Кто в группе$"),
-                    list_members
+                    filters.Regex("^Я жду$"),
+                    check_in
                 ),
-                MessageHandler(
-                    filters.Regex("^Помощь$"),
-                    help_command
-                )
             ],
             CREATING_TEAM: [
                 MessageHandler(
                     filters.TEXT & ~(filters.COMMAND | filters.Regex("^Создать группу$")),
+                    create_team
+                ),
+                MessageHandler(
+                    filters.Regex("^Заново ввести группу$"),
                     create_team
                 )
             ],
@@ -88,10 +93,26 @@ def main() -> None:
                     list_members
                 )
             ],
+            CHOOSING_TO_DO: [
+                MessageHandler(
+                    filters.TEXT & ~(filters.COMMAND | filters.Regex("^Создать группу$")),
+                    shuffle_members
+                ),
+                MessageHandler(
+                    filters.TEXT & ~(filters.COMMAND | filters.Regex("^Создать группу$")),
+                    create_team
+                ),
+            ],
             SHUFFLING: [
                 MessageHandler(
-                    filters.TEXT & ~(filters.COMMAND | filters.Regex("^Кто в группе$")),
+                    filters.Regex("^Разослать сантам$"),
                     shuffle_members,
+                )
+            ],
+            FINISHING: [
+                MessageHandler(
+                    filters.Regex("^Ну как?$"),
+                    finish,
                 )
             ],
         },

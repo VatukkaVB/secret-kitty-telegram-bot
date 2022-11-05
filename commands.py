@@ -1,12 +1,26 @@
-from uuid import uuid4
+from random import choice
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton
-from telegram.ext import ContextTypes
+from telegram.ext import (
+    ContextTypes,
+    ConversationHandler,
+    )
 
-CREATING_TEAM, ADDING_MEMBERS, LISTING_MEMBERS, WAITING, CHOOSING, SHUFFLING, CHOOSING_TO_DO, = range(7)
+CREATING_TEAM, ADDING_MEMBERS, LISTING_MEMBERS, WAITING, CHOOSING, SHUFFLING, CHOOSING_TO_DO, FINISHING, = range(8)
 
 
 def show_members(user_data):
     return " \n".join(user_data['team_members'].values())
+
+
+def shuffle(people):
+    #people = ['@overcharw', '@vatukka', '@Youngwar_99', '@asya_ora', '@qokoa', '@vedmakuzaplatite']
+
+    pairs = {}
+    for santa in people:
+        potential_recipients = [person for person in people if person != santa and person not in pairs.values()]
+        recipient = choice(potential_recipients)
+        pairs[santa] = recipient
+    return pairs
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -27,13 +41,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
                   'Если хочешь создать новую группу, напиши или выбери кнопку "Создать группу". '
                   'Если ты ждешь, пока тебя распределят, нажми "Я жду"'
                   )
-    del context.user_data
+    try:
+        del context.user_data
+    except AttributeError:
+        pass
+    chat_id = update.message.chat_id
+    print("\tChat_ID", chat_id)
     await update.message.reply_text(reply_text, reply_markup=markup)
     return CHOOSING
 
 
 async def check_in(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("Waiting user:", update.effective_message.chat_id)
+    print("\tWaiting user:", update.effective_message.chat_id)
     if context.bot_data['users'] is None:
         context.bot_data['users'] = [update.effective_message.chat_id]
     else:
@@ -42,6 +61,7 @@ async def check_in(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def create_team(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     # user = update.message.from_user
+    # @overcharw, @vatukka, @Youngwar_99, @asya_ora, @qokoa, @vedmakuzaplatite
     reply_text = "Введи список тегов тех, кого хочешь добавить к группе, через запятую:"
     await update.message.reply_text(reply_text)
 
@@ -54,8 +74,8 @@ async def add_members(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     team_members = update.message.parse_entities()
     print(team_members)
     context.user_data['team_members'] = team_members
-    print("context: ", context.user_data)
-    print("USER DATA:", (context.user_data['team_members'].values() is not None))
+    print("\tcontext: ", context.user_data)
+    print("\tUSER DATA:", (context.user_data['team_members'].values() is not None))
 
     reply_keyboard = [
         ["Показать!"],
@@ -77,11 +97,11 @@ async def add_members(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
 async def list_members(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     print("LIST_MEMBERS")
-    reply_keyboard = [
-        InlineKeyboardButton(text="Разослать сантам", callback_data=str(SHUFFLING)),
-        InlineKeyboardButton(text="Заново ввести группу", callback_data=str(ADDING_MEMBERS)),
+    buttons = [
+        ["Разослать сантам"],
+        ["Заново ввести группу"],
     ]
-    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+    markup = ReplyKeyboardMarkup(buttons, one_time_keyboard=True)
     reply_text = ('Вот кого удалось добавить: \n'
                   + show_members(context.user_data) +
                   '\n Все верно? Тогда жми "Разослать", чтобы санты узнали, кому они дарят подарки!'
@@ -91,21 +111,39 @@ async def list_members(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     return SHUFFLING
 
 
+def show_pairs(pairs):
+    return " ".join(pairs.items())
+
+
 async def shuffle_members(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    people_safe = context.user_data['team_members'].items()
-    people = people_safe
-    santa_s = people
-    pairs = {}
-    for santa in santa_s:
-        potential_recipients = people
-        potential_recipients.remove(santa)
+    print("SHUFFLE_MEMBERS")
+    reply_keyboard = [["Ну как?"]]
+    markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+    people = list(context.user_data['team_members'].values())
+    try:
+        pairs = shuffle(people)
+        reply_text = "Успешно сгенерировали пары!"
+    except IndexError:
+        pairs = shuffle(people)
+        reply_text = "Уф, это было нелегко, но мы сгенерировали пары!" + show_pairs(pairs)
+    print("\tСформированные пары:", pairs)
+    await update.message.reply_text(reply_text, reply_markup=markup)
+    # await update.message.reply_text(reply_text)
 
-        recipient = choice(potential_recipients)
-        pairs[santa] = recipient
+    for key in pairs.keys():
+        recipient = pairs[key]
 
-        people.remove(recipient)
 
-        people = people + [santa]
+    photo = "https://icdn.lenta.ru/images/2021/10/21/11/20211021110546130/square_320_2ae978183310b7a3e921e8628b2c3314.jpeg"
+    await update.message.reply_photo(photo)
+    return FINISHING
+
+
+async def finish(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("END")
+    photo = "https://icdn.lenta.ru/images/2021/10/21/11/20211021110546130/square_320_2ae978183310b7a3e921e8628b2c3314.jpeg"
+    await update.message.reply_photo(photo)
+    return ConversationHandler.END
 
 
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
