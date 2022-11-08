@@ -42,9 +42,11 @@ if __version_info__ < (20, 0, 0, "alpha", 1):
     )
 
 logging.basicConfig(
+    filename='santa_bot.log',
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
+logger = logging.getLogger(__name__)
 
 CREATING_TEAM, ADDING_MEMBERS, LISTING_MEMBERS, WAITING, CHOOSING, SHUFFLING, CHOOSING_TO_DO, FINISHING, = range(8)
 

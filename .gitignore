@@ -4,3 +4,5 @@ setup_env.py
 /.env
 /conversationbot
 /shuffling_test.py
+/MyLogger.py
+/santa_bot.log

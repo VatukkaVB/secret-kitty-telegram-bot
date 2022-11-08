@@ -4,8 +4,18 @@ from telegram.ext import (
     ContextTypes,
     ConversationHandler,
     )
+import MyLogger
+import logging
+import re
 
 CREATING_TEAM, ADDING_MEMBERS, LISTING_MEMBERS, WAITING, CHOOSING, SHUFFLING, CHOOSING_TO_DO, FINISHING, = range(8)
+
+logging.basicConfig(
+    filename='santa_bot.log',
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+logger = logging.getLogger(__name__)
 
 
 def show_members(user_data):
@@ -13,14 +23,31 @@ def show_members(user_data):
 
 
 def shuffle(people):
-    #people = ['@overcharw', '@vatukka', '@Youngwar_99', '@asya_ora', '@qokoa', '@vedmakuzaplatite']
-
     pairs = {}
     for santa in people:
         potential_recipients = [person for person in people if person != santa and person not in pairs.values()]
         recipient = choice(potential_recipients)
         pairs[santa] = recipient
     return pairs
+
+
+def get_logged_users():
+    with open('santa_bot.log', 'r') as log_file:
+        logs = log_file.read()
+        users = re.findall(r"([A-Z|a-z|0-9]* : \d*)", logs)
+        users_info = {}
+        for user in users:
+            un_id = user.split(" : ")
+            users_info[un_id[0]] = un_id[1]
+    return users_info
+
+
+def get_needed_users(users_info, needed_uns):
+    un_id = {}
+    for key in users_info.keys():
+        if key in needed_uns:
+            un_id[key] = users_info[key]
+    return un_id
 
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -36,7 +63,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         ["Создать группу"], ["Я жду"]
     ]
     markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
-
+    user = update.message.from_user
+    logger.info("Started the conversation USER: " + str(user.username) + " : " + str(user.id))
     reply_text = ('Привет! Это бот для тайного санты имени трусов хэллоу китти. '
                   'Если хочешь создать новую группу, напиши или выбери кнопку "Создать группу". '
                   'Если ты ждешь, пока тебя распределят, нажми "Я жду"'
@@ -45,8 +73,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         del context.user_data
     except AttributeError:
         pass
-    chat_id = update.message.chat_id
-    print("\tChat_ID", chat_id)
+    user = update.message.from_user
     await update.message.reply_text(reply_text, reply_markup=markup)
     return CHOOSING
 
@@ -61,7 +88,6 @@ async def check_in(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def create_team(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     # user = update.message.from_user
-    # @overcharw, @vatukka, @Youngwar_99, @asya_ora, @qokoa, @vedmakuzaplatite
     reply_text = "Введи список тегов тех, кого хочешь добавить к группе, через запятую:"
     await update.message.reply_text(reply_text)
 
@@ -136,14 +162,14 @@ async def shuffle_members(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     photo = "https://icdn.lenta.ru/images/2021/10/21/11/20211021110546130/square_320_2ae978183310b7a3e921e8628b2c3314.jpeg"
     await update.message.reply_photo(photo)
-    return FINISHING
-
-
-async def finish(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("END")
-    photo = "https://icdn.lenta.ru/images/2021/10/21/11/20211021110546130/square_320_2ae978183310b7a3e921e8628b2c3314.jpeg"
-    await update.message.reply_photo(photo)
     return ConversationHandler.END
+
+
+# async def finish(update: Update, context: ContextTypes.DEFAULT_TYPE):
+#     print("END")
+#     photo = "https://icdn.lenta.ru/images/2021/10/21/11/20211021110546130/square_320_2ae978183310b7a3e921e8628b2c3314.jpeg"
+#     await update.message.reply_photo(photo)
+#     return ConversationHandler.END
 
 
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
