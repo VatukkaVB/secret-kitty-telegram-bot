@@ -22,7 +22,7 @@ from commands import (
     # choose_show,
     list_members,
     shuffle_members,
-    finish,
+    # finish,
     unknown
 )
 
@@ -42,7 +42,7 @@ if __version_info__ < (20, 0, 0, "alpha", 1):
     )
 
 logging.basicConfig(
-    filename='santa_bot.log',
+    filename='data/santa_bot.log',
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
@@ -53,7 +53,7 @@ CREATING_TEAM, ADDING_MEMBERS, LISTING_MEMBERS, WAITING, CHOOSING, SHUFFLING, CH
 
 def main() -> None:
 
-    persistence = PicklePersistence(filepath="bot_data")
+    persistence = PicklePersistence(filepath="data/bot_data")
     application = ApplicationBuilder().token(os.environ.get("TOKEN")).persistence(persistence).build()
 
     '''Handler Declarations'''
@@ -111,12 +111,12 @@ def main() -> None:
                     shuffle_members,
                 )
             ],
-            FINISHING: [
-                MessageHandler(
-                    filters.Regex("^Ну как?$"),
-                    finish,
-                )
-            ],
+            # FINISHING: [
+            #     MessageHandler(
+            #         filters.Regex("^Ну как?$"),
+            #         finish,
+            #     )
+            # ],
         },
         fallbacks=[MessageHandler(filters.Regex("^Done$"), start)],
         name="my_conversation",

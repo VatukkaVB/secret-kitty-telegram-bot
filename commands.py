@@ -4,14 +4,13 @@ from telegram.ext import (
     ContextTypes,
     ConversationHandler,
     )
-import MyLogger
 import logging
 import re
 
 CREATING_TEAM, ADDING_MEMBERS, LISTING_MEMBERS, WAITING, CHOOSING, SHUFFLING, CHOOSING_TO_DO, FINISHING, = range(8)
 
 logging.basicConfig(
-    filename='santa_bot.log',
+    filename='data/santa_bot.log',
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
@@ -20,6 +19,10 @@ logger = logging.getLogger(__name__)
 
 def show_members(user_data):
     return " \n".join(user_data['team_members'].values())
+
+
+def show_pairs(pairs):
+    return " ".join(pairs.items())
 
 
 def shuffle(people):
@@ -135,10 +138,6 @@ async def list_members(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     # await update.message.reply_text(reply_text, ", ".join(context.user_data.get('team_members').values()))
     await update.message.reply_text(reply_text, reply_markup=markup)
     return SHUFFLING
-
-
-def show_pairs(pairs):
-    return " ".join(pairs.items())
 
 
 async def shuffle_members(update: Update, context: ContextTypes.DEFAULT_TYPE):
