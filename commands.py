@@ -34,8 +34,8 @@ def shuffle(people):
     return pairs
 
 
-def get_logged_users():
-    with open('santa_bot.log', 'r') as log_file:
+def get_logged_users() -> dict:
+    with open('data/santa_bot.log', 'r') as log_file:
         logs = log_file.read()
         users = re.findall(r"([A-Z|a-z|0-9]* : \d*)", logs)
         users_info = {}
@@ -45,7 +45,7 @@ def get_logged_users():
     return users_info
 
 
-def get_needed_users(users_info, needed_uns):
+def get_needed_users(users_info, needed_uns) -> dict:
     un_id = {}
     for key in users_info.keys():
         if key in needed_uns:
@@ -155,8 +155,17 @@ async def shuffle_members(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(reply_text, reply_markup=markup)
     # await update.message.reply_text(reply_text)
 
-    for key in pairs.keys():
-        recipient = pairs[key]
+    all_logged_users = get_logged_users()
+    group_users_info = get_needed_users(all_logged_users, [person.replace("@", "") for person in people])
+    for santa in pairs.keys():
+        recipient = pairs[santa]
+        recipient_id = group_users_info[recipient.replace("@", "")]
+        santa_id = group_users_info[santa.replace("@", "")]
+        await context.bot.send_message(
+                    chat_id=santa_id,
+                    text="Привет! Ты отправляешь подарок " + recipient,
+                )
+
 
 
     photo = "https://icdn.lenta.ru/images/2021/10/21/11/20211021110546130/square_320_2ae978183310b7a3e921e8628b2c3314.jpeg"
